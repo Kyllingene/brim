@@ -17,7 +17,7 @@ each cell.
 ### Debug
 
 If compiled in debug mode, or with the feature flag `debug`, brim will
-recognize the character `;`, and will dump several relevant bits of info
+recognize the character `;`. This will dump several relevant bits of info
 (the tape, the tape pointer, and three instructions for context) to
 output.
 
@@ -32,8 +32,8 @@ reliable experience (the output is flushed on each newline, and upon exit).
 ### Optimizations
 
 Brim internally uses a token-based intermediary structure to execute the code.
-First, it groups together add, subtract, left, and right instructions to save
-needless cycles (as well as discards redundant instructions).
+First, it groups together add, subtract, left, and right instructions to
+eliminate repetitive cycles (as well as discard redundant instructions).
 
 Then, it performs several macro-optimizations to reduce common operations to
 a single "instruction". Currently, it recognizes:
@@ -52,8 +52,9 @@ These are all run in a buffered I/O environment, as detailed above.
 
 ### Importing
 
-This crate is also available as a library! The executable simply provides a CLI
-interface to the library.
+This crate is also available as a library. The executable simply provides a CLI
+interface to the library. The points of interest are the `parse` and `optimize`
+functions, as well as the `Token` enum.
 
 ## Roadmap
 
@@ -65,9 +66,9 @@ Brim isn't finished yet! My hopes for the future include:
 
 ## Contributions
 
-Contributions are always welcome, especially optimizations! Please, before you
+Contributions are always welcome, especially optimizations. Please, before you
 create a pull request, run `cargo fmt` and `cargo clippy`.
 
 If you want to implement a new feature, consider gating it behind a feature
 flag. This can reduce code size as well as slightly improve runtimes. It isn't
-appropriate for all, but it is worth considering.
+appropriate for all additions, but it is worth considering.

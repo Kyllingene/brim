@@ -5,7 +5,11 @@ use std::{
 
 use sarge::prelude::*;
 
-use brim::{parse, helper::{warn, err, ReadIter}, interpret};
+use brim::{
+    helper::{err, warn, ReadIter},
+    interpret, parse,
+    token::optimize,
+};
 
 fn main() {
     let mut parser = ArgumentParser::new();
@@ -27,6 +31,7 @@ fn main() {
         let input = fs::read_to_string(filename).unwrap_or_else(|e| err("failed", e));
 
         let toks = parse(&input);
+        let toks = optimize(&toks);
 
         let stdin = if let Some(out) = get_arg!(parser, both, 'i', "input").unwrap().val.clone() {
             let file =
@@ -47,4 +52,3 @@ fn main() {
         }
     }
 }
-

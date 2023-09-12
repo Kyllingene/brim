@@ -1,13 +1,21 @@
 pub mod helper;
 pub mod token;
 
-use std::io::{Write, BufWriter};
+use std::io::{BufWriter, Write};
 
-use helper::{wrap_goto, err};
+use helper::{err, wrap_goto};
 use token::Token;
 
 pub use token::parse;
 
+/// The core of brim: the interpreter.
+/// `stdin` must be an iterator over `u8`, but you can use
+/// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
+/// any [`Read`](std::io::Read)able type.
+///
+/// Since [`Token`] is `Copy`, this takes a slice instead of a `Vec`. It's
+/// other arguments, `stdin` and `stdout`, are also generic enough to provide
+/// for many use cases.
 pub fn interpret(code: &[Token], mut stdin: impl Iterator<Item = u8>, stdout: impl Write) {
     let mut stdout = BufWriter::new(stdout);
 

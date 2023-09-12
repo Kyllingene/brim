@@ -2,24 +2,52 @@ use std::fmt::Display;
 
 use crate::{err, helper::left_right};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// An optimized token; it may represent more than one brain* instruction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Token {
+    /// Equivalent to `'+' * n`.
     Add(u8),
+    /// Equivalent to `'-' * n`.
     Sub(u8),
+    /// Equivalent to `'>' * n` if `n > 0`, else `'<' * n`.
     Goto(isize),
+    /// A left bracket. The value is the index of the corresponding right
+    /// bracket.
+    ///
+    /// *Note*: [`parse`] leaves this set to 0, since [`optimize`] will change
+    /// the indices anyways.
     LBrack(usize),
+    /// A right bracket. The value is the index of the corresponding left
+    /// bracket.
+    ///
+    /// *Note*: [`parse`] leaves this set to 0, since [`optimize`] will change
+    /// the indices anyways.
     RBrack(usize),
+    /// Equivalent to `'.'`.
     Out,
+    /// Equivalent to `','`.
     In,
 
+    /// Macro-optimization. Equivalent to `'[-]'`.
     Zero,
+    /// Macro-optimization. Equivalent to `'[-]' + ('+' * n)`.
     Set(u8),
+    /// Macro-optimization. Equivalent to `'[-' + Goto(n) + '+' + Goto(-n) + ']'`.
     Move(isize),
 
+    /// Equivalent to `';'`. Only available if in debug mode, or if feature
+    /// flag `debug` is enabled.
     #[cfg(any(debug_assertions, feature = "debug"))]
     Dump,
 }
 
+/// Parse brain* input into [`Token`]s. Groups together [`Add`](Token::Add) and
+/// [`Sub`](Token::Sub) instructions, as well as converting `<` and `>` to
+/// [`Goto`](Token::Goto).
+///
+/// ***Note:*** the output is *not yet valid!* Each [`LBrack`](Token::LBrack)
+/// and [`RBrack`](Token::RBrack) still needs to be set to its match, i.e. via
+/// [`optimize`].
 pub fn parse(input: &str) -> Vec<Token> {
     // let input = input.to_string();
     let mut toks = Vec::new();
@@ -80,10 +108,11 @@ pub fn parse(input: &str) -> Vec<Token> {
         }
     }
 
-    optimize(toks)
+    toks
 }
 
-fn optimize(toks: Vec<Token>) -> Vec<Token> {
+/// Performs macro-optimizations, and sets the final indices for each bracket.
+pub fn optimize(toks: &[Token]) -> Vec<Token> {
     let mut out = Vec::new();
     let mut lbracks = Vec::new();
 
@@ -180,7 +209,7 @@ impl Display for Token {
 
             Token::In => write!(f, ","),
             Token::Zero => write!(f, "[-]"),
-            Token::Move(i) => write!(f, "[-{}+{}]", left_right(*i), left_right(-i)),
+            Token::Move(i) => write!(f, "[{}-{}+]", left_right(*i), left_right(-i)),
 
             #[cfg(any(debug_assertions, feature = "debug"))]
             Token::Dump => write!(f, ";"),

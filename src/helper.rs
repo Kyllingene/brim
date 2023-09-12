@@ -12,13 +12,13 @@ use std::sync::Mutex;
 #[cfg(debug_assertions)]
 static STDIN_ITER_EXISTS: Mutex<bool> = Mutex::new(false);
 
-/// Prints to stderr (in the format "msg: e") and exits.
+/// Prints to stderr (in the format "msg: e") in red, then exits.
 pub fn err(msg: impl Display, e: impl Display) -> ! {
     eprintln!("{0}[38:5:1m{1}: {2}{0}[0m", 27 as char, msg, e);
     exit(1);
 }
 
-/// Prints a warning to stderr.
+/// Prints a warning to stderr in yellow.
 pub fn warn(msg: impl Display) {
     eprintln!("{0}[38:5:3m{1}{0}[0m", 27 as char, msg);
 }
@@ -45,7 +45,8 @@ pub fn left_right(i: isize) -> String {
     }
 }
 
-/// An iterator over bytes from stdin.
+/// An iterator over bytes from a [`Read`]able source.
+/// Provides a `stdin` method for creating a `ReadIter` over [`stdin`].
 ///
 /// Uses a 32-byte buffer internally.
 pub struct ReadIter {
@@ -64,21 +65,24 @@ impl ReadIter {
         }
     }
 
-    /// Initializes a new ReadIter over stdin.
+    /// Initializes a new `ReadIter` over [`stdin`].
+    ///
+    /// # Panics
+    /// Panics if a `ReadIter` already exists, and debug assertions are enabled.
+    /// If not, the two iterators will fight for input, causing race conditions.
     pub fn stdin() -> Self {
         #[cfg(debug_assertions)]
         if *STDIN_ITER_EXISTS.lock().unwrap() {
             panic!("only one StdinIter can be initialized");
-        }
-
-        #[cfg(debug_assertions)]
-        {
+        } else {
             *STDIN_ITER_EXISTS.lock().unwrap() = true;
         }
 
         Self::new(Box::new(stdin()))
     }
 
+    /// Pops a value from the buffer, unless it is empty.
+    /// Doesn't read anything if the buffer is empty.
     fn pop(&mut self) -> Option<u8> {
         if self.len == 0 {
             None
@@ -103,5 +107,12 @@ impl Iterator for ReadIter {
             self.len = read;
             self.pop()
         }
+    }
+}
+
+#[cfg(debug_assertions)]
+impl Drop for ReadIter {
+    fn drop(&mut self) {
+        *STDIN_ITER_EXISTS.lock().unwrap() = false;
     }
 }
