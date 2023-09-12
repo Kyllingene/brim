@@ -1,5 +1,9 @@
 # Brim
 
+![build status](https://github.com/kyllingene/brim/actions/workflows/rust.yml/badge.svg)
+![license](https://img.shields.io/crates/l/brim)
+![version](https://img.shields.io/crates/v/brim)
+
 Brim is an optimizing brain* interpreter than nonetheless strives to be very
 easy and pleasant to use.
 
