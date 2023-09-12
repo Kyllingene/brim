@@ -50,6 +50,11 @@ so executing them requires zero lookup time (it just overrides the IP).
 
 These are all run in a buffered I/O environment, as detailed above.
 
+### Importing
+
+This crate is also available as a library! The executable simply provides a CLI
+interface to the library.
+
 ## Roadmap
 
 Brim isn't finished yet! My hopes for the future include:
