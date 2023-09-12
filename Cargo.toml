@@ -3,10 +3,13 @@ name = "brim"
 version = "2.1.0"
 edition = "2021"
 
-license = "MIT"
 description = "An optimizing brain* interpreter."
 authors = ["Kyllingene"]
 repository = "https://github.com/kyllingene/dirt"
+license = "MIT"
+
+keywords = ["cli", "command-line", "interpreter"]
+categories = ["command-line-interface"]
 
 [dependencies]
 sarge = "3.0.1"
