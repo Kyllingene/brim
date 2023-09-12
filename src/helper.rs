@@ -1,4 +1,9 @@
-use std::{fmt::Display, process::exit, io::{stdin, Read}};
+use std::{
+    cmp::Ordering,
+    fmt::Display,
+    io::{stdin, Read},
+    process::exit,
+};
 
 #[cfg(debug_assertions)]
 use std::sync::Mutex;
@@ -18,24 +23,30 @@ pub fn warn(msg: impl Display) {
     eprintln!("{0}[38:5:3m{1}{0}[0m", 27 as char, msg);
 }
 
-/// Wraps an addition around 30000.
+/// Wraps an addition/subtraction around 30000 and 0.
 #[inline]
-pub fn wrap_add(i: usize, c: usize) -> usize {
-    (i + c) % 30000
+pub fn wrap_goto(x: usize, c: isize) -> usize {
+    if c > 0 {
+        (x + c as usize) % 30000
+    } else if c.unsigned_abs() > x {
+        30000 - (c.unsigned_abs() - x)
+    } else {
+        x - c.unsigned_abs()
+    }
 }
 
-/// Wraps a subtraction around 30000.
+/// Turns a relative index into left/right symbols.
 #[inline]
-pub fn wrap_sub(i: usize, c: usize) -> usize {
-    if i < c {
-        30000 - (c - i)
-    } else {
-        i - c
+pub fn left_right(i: isize) -> String {
+    match i.cmp(&0) {
+        Ordering::Greater => ">".repeat(i as usize),
+        Ordering::Less => "<".repeat(-i as usize),
+        Ordering::Equal => String::new(),
     }
 }
 
 /// An iterator over bytes from stdin.
-/// 
+///
 /// Uses a 32-byte buffer internally.
 pub struct ReadIter {
     read: Box<dyn Read>,
@@ -61,7 +72,9 @@ impl ReadIter {
         }
 
         #[cfg(debug_assertions)]
-        { *STDIN_ITER_EXISTS.lock().unwrap() = true; }
+        {
+            *STDIN_ITER_EXISTS.lock().unwrap() = true;
+        }
 
         Self::new(Box::new(stdin()))
     }
@@ -83,7 +96,10 @@ impl Iterator for ReadIter {
         if self.len != 0 {
             self.pop()
         } else {
-            let read = self.read.read(&mut self.buf).unwrap_or_else(|e| err("failed to read from stdin", e));
+            let read = self
+                .read
+                .read(&mut self.buf)
+                .unwrap_or_else(|e| err("failed to read from stdin", e));
             self.len = read;
             self.pop()
         }

@@ -29,14 +29,14 @@ reliable experience (the output is flushed on each newline, and upon exit).
 
 Brim internally uses a token-based intermediary structure to execute the code.
 First, it groups together add, subtract, left, and right instructions to save
-needless cycles.
+needless cycles (as well as discards redundant instructions).
 
 Then, it performs several macro-optimizations to reduce common operations to
 a single "instruction". Currently, it recognizes:
 
 - Zeroing a cell (`[-]`)
 - Setting a cell to a value (`[-]++++`)
-- Soon, moving one cell to another (`[->+<]` / `[>+<-]`)
+- Moving one cell to another (`[->+<]` / `[>+<-]`)
 
 The token-based structure makes these trivial to recognize, since repeating
 instructions have already been collapsed into one.
@@ -53,3 +53,12 @@ Brim isn't finished yet! My hopes for the future include:
 - More macro-optimizations
 - Heavy micro-optimization of brim itself
 - More variations (non-wrapping, signed, varying tape size)
+
+## Contributions
+
+Contributions are always welcome, especially optimizations! Please, before you
+create a pull request, run `cargo fmt` and `cargo clippy`.
+
+If you want to implement a new feature, consider gating it behind a feature
+flag. This can reduce code size as well as slightly improve runtimes. It isn't
+appropriate for all, but it is worth considering.
