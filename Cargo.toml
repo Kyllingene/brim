@@ -1,11 +1,11 @@
 [package]
 name = "brim"
-version = "2.2.0"
+version = "2.2.1"
 edition = "2021"
 
 description = "An optimizing brain* interpreter."
 authors = ["Kyllingene"]
-repository = "https://github.com/kyllingene/dirt"
+repository = "https://github.com/kyllingene/brim"
 license = "MIT"
 
 keywords = ["cli", "command-line", "interpreter"]
