@@ -3,5 +3,14 @@
 version = 3
 
 [[package]]
-name = "dirt"
-version = "0.1.0"
+name = "brim"
+version = "2.1.0"
+dependencies = [
+ "sarge",
+]
+
+[[package]]
+name = "sarge"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cac584feac648f55ccf066d3f6e0bbedf47b676ab3e9c82133744c7708c2c892"

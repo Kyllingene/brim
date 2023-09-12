@@ -1,12 +1,17 @@
 [package]
-name = "dirt"
-version = "0.1.0"
+name = "brim"
+version = "2.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+description = "An optimizing brain* interpreter."
+authors = ["Kyllingene"]
+repository = "https://github.com/kyllingene/dirt"
 
 [dependencies]
+sarge = "3.0.1"
 
 [features]
 default = []
 debug = []
+

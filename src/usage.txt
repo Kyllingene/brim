@@ -1,0 +1,10 @@
+brim [-i|--input infile] [-o|--output outfile] <file...>
+
+Interprets one or more brain* files in series.
+
+If `--input` is unspecified, defaults to stdin; likewise, `--output` defaults 
+to stdout.
+
+If compiled in debug mode, or if feature `debug` was specified at compile time, 
+also recognizes the character ';', which dumps out the current tape, pointer, 
+and the three (optimized) instructions around the current instruction.
