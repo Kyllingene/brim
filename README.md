@@ -11,7 +11,7 @@ pleasant and easy to use.
 
 ### Details
 
-Brim uses a wrapping 30000-cell tape, with a single wrapping signed byte in
+Brim uses a wrapping 30000-cell tape, with a single wrapping unsigned byte in
 each cell.
 
 ### Debug
