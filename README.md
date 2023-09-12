@@ -5,7 +5,7 @@
 ![version](https://img.shields.io/crates/v/brim)
 
 Brim is an optimizing brain* interpreter than nonetheless strives to be very
-easy and pleasant to use.
+pleasant and easy to use.
 
 ## Features
 
@@ -45,8 +45,8 @@ a single "instruction". Currently, it recognizes:
 The token-based structure makes these trivial to recognize, since repeating
 instructions have already been collapsed into one.
 
-Finally, it iterates over each bracket (`[`/`]`) and pre-loads its destination
-token, so executing them requires zero lookup time (it just overrides the IP).
+Finally, it iterates over each bracket (`[`/`]`) and pre-loads its destination,
+so executing them requires zero lookup time (it just overrides the IP).
 
 These are all run in a buffered I/O environment, as detailed above.
 
