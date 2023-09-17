@@ -13,9 +13,10 @@ pub use token::parse;
 /// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
 /// any [`Read`](std::io::Read)able type.
 ///
-/// Since [`Token`] is `Copy`, this takes a slice instead of a `Vec`. It's
-/// other arguments, `stdin` and `stdout`, are also generic enough to provide
-/// for many use cases.
+/// Since [`Token`] is `Copy`, this takes a slice instead of a `Vec`. `stdout`
+/// just has to be [`Write`](std::io::Write)able. However, it's wrapped
+/// internally by a [`BufWriter`](std::io::BufWriter), so **don't bother
+/// buffering it.**
 pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write) {
     let mut stdout = BufWriter::new(stdout);
 
@@ -30,14 +31,13 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
         let tok = code[ip];
 
         match tok {
-            Token::Add(i) => tape[sp] = tape[sp].wrapping_add(i),
-            Token::Sub(i) => tape[sp] = tape[sp].wrapping_sub(i),
+            Token::Inc(i) => tape[sp] = tape[sp].wrapping_add(i),
+            Token::Dec(i) => tape[sp] = tape[sp].wrapping_sub(i),
             Token::Goto(i) => sp = wrap_goto(sp, i),
-            Token::In => tape[sp] = stdin.next().unwrap_or_default(),
+            Token::In => tape[sp] = stdin.next().unwrap_or(0),
             Token::Out => {
                 stdout
-                    .write(&[tape[sp]])
-                    .map(|_| ())
+                    .write_all(&[tape[sp]])
                     .unwrap_or_else(|e| err("failed to write to output", e));
 
                 if tape[sp] == b'\n' {
@@ -61,9 +61,22 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
 
             Token::Zero => tape[sp] = 0,
             Token::Set(i) => tape[sp] = i,
-            Token::Move(i) => {
-                tape[wrap_goto(sp, i)] += tape[sp];
+            Token::Add(i, mul) => {
+                let v = tape[sp];
+                let cell = &mut tape[wrap_goto(sp, i)];
+                *cell = cell.wrapping_add(v * mul);
                 tape[sp] = 0;
+            }
+            Token::Sub(i) => {
+                let v = tape[sp];
+                let cell = &mut tape[wrap_goto(sp, i)];
+                *cell = cell.wrapping_sub(v);
+                tape[sp] = 0;
+            }
+            Token::Scan(i) => {
+                while tape[sp] != 0 {
+                    sp = wrap_goto(sp, i);
+                }
             }
 
             #[cfg(any(debug_assertions, feature = "debug"))]

@@ -19,7 +19,7 @@ each cell.
 If compiled in debug mode, or with the feature flag `debug`, brim will
 recognize the character `;`. This will dump several relevant bits of info
 (the tape, the tape pointer, and three instructions for context) to
-output.
+the supplied output.
 
 ### File I/O
 
@@ -41,6 +41,9 @@ a single "instruction". Currently, it recognizes:
 - Zeroing a cell (`[-]`)
 - Setting a cell to a value (`[-]++++`)
 - Moving one cell to another (`[->+<]` / `[>+<-]`)
+    - Also recognizes multiplication (`[->+++<]`)
+- Subtracting one cell from another (`[->-<]`)
+- Scanning for a zero cell (`[>>>]`)
 
 The token-based structure makes these trivial to recognize, since repeating
 instructions have already been collapsed into one.

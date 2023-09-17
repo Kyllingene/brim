@@ -6,9 +6,9 @@ use crate::{err, helper::left_right};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Token {
     /// Equivalent to `'+' * n`.
-    Add(u8),
+    Inc(u8),
     /// Equivalent to `'-' * n`.
-    Sub(u8),
+    Dec(u8),
     /// Equivalent to `'>' * n` if `n > 0`, else `'<' * n`.
     Goto(isize),
     /// A left bracket. The value is the index of the corresponding right
@@ -28,12 +28,16 @@ pub enum Token {
     /// Equivalent to `','`.
     In,
 
-    /// Macro-optimization. Equivalent to `'[-]'`.
+    /// Macro-optimization. Equivalent to `[-]`.
     Zero,
-    /// Macro-optimization. Equivalent to `'[-]' + ('+' * n)`.
+    /// Macro-optimization. Equivalent to `[-]+`.
     Set(u8),
-    /// Macro-optimization. Equivalent to `'[-' + Goto(n) + '+' + Goto(-n) + ']'`.
-    Move(isize),
+    /// Macro-optimization. Equivalent to `[->+<]`.
+    Add(isize, u8),
+    /// Macro-optimization. Equivalent to `[->-<]`.
+    Sub(isize),
+    /// Macro-optimization. Equivalent to `[>>>]`.
+    Scan(isize),
 
     /// Equivalent to `';'`. Only available if in debug mode, or if feature
     /// flag `debug` is enabled.
@@ -41,8 +45,8 @@ pub enum Token {
     Dump,
 }
 
-/// Parse brain* input into [`Token`]s. Groups together [`Add`](Token::Add) and
-/// [`Sub`](Token::Sub) instructions, as well as converting `<` and `>` to
+/// Parse brain* input into [`Token`]s. Groups together [`Inc`](Token::Inc) and
+/// [`Dec`](Token::Dec) instructions, as well as converting `<` and `>` to
 /// [`Goto`](Token::Goto).
 ///
 /// ***Note:*** the output is *not yet valid!* Each [`LBrack`](Token::LBrack)
@@ -55,23 +59,23 @@ pub fn parse(input: &str) -> Vec<Token> {
     for ch in input.chars() {
         match ch {
             '+' => {
-                if let Some(Token::Add(i)) = toks.last().copied() {
+                if let Some(&Token::Inc(i)) = toks.last() {
                     toks.pop();
-                    toks.push(Token::Add(i.wrapping_add(1)));
+                    toks.push(Token::Inc(i.wrapping_add(1)));
                 } else {
-                    toks.push(Token::Add(1));
+                    toks.push(Token::Inc(1));
                 }
             }
             '-' => {
-                if let Some(Token::Sub(i)) = toks.last().copied() {
+                if let Some(&Token::Dec(i)) = toks.last() {
                     toks.pop();
-                    toks.push(Token::Sub(i.wrapping_add(1)));
+                    toks.push(Token::Dec(i.wrapping_add(1)));
                 } else {
-                    toks.push(Token::Sub(1));
+                    toks.push(Token::Dec(1));
                 }
             }
             '>' => {
-                if let Some(Token::Goto(i)) = toks.last().copied() {
+                if let Some(&Token::Goto(i)) = toks.last() {
                     toks.pop();
                     toks.push(Token::Goto(i + 1));
                 } else {
@@ -79,7 +83,7 @@ pub fn parse(input: &str) -> Vec<Token> {
                 }
             }
             '<' => {
-                if let Some(Token::Goto(i)) = toks.last().copied() {
+                if let Some(&Token::Goto(i)) = toks.last() {
                     toks.pop();
                     toks.push(Token::Goto(i - 1));
                 } else {
@@ -117,16 +121,18 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
     let mut lbracks = Vec::new();
 
     let mut si = 0;
-    let mut nsi = 0;
     while si < toks.len() {
         let mut tok = toks[si];
 
         if matches!(tok, Token::LBrack(_)) {
             let next = toks.get(si + 1);
-            if matches!(next, Some(Token::Sub(1))) {
+
+            // Zero / Set / Add / Sub
+            if matches!(next, Some(Token::Dec(1))) {
                 let next = toks.get(si + 2);
+                // Zero / Set
                 if matches!(next, Some(Token::RBrack(_))) {
-                    if let Some(Token::Add(i)) = toks.get(si + 3) {
+                    if let Some(Token::Inc(i)) = toks.get(si + 3) {
                         out.push(Token::Set(*i));
 
                         si += 4;
@@ -136,48 +142,81 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
                         si += 3;
                     }
 
-                    nsi += 1;
                     continue;
+
+                // Add / Sub
                 } else if let Some(Token::Goto(there)) = next {
-                    if matches!(toks.get(si + 3), Some(Token::Add(1))) {
+                    let next = toks.get(si + 3);
+
+                    // Add
+                    if let Some(Token::Inc(mul)) = next {
                         if let Some(Token::Goto(back)) = toks.get(si + 4) {
-                            if there.abs() == back.abs()
-                                && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
+                            if *there == -back && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
                             {
-                                out.push(Token::Move(*there));
+                                out.push(Token::Add(*there, *mul));
 
                                 si += 6;
-                                nsi += 1;
+                                continue;
+                            }
+                        }
+
+                    // Sub
+                    } else if matches!(next, Some(Token::Dec(1))) {
+                        if let Some(Token::Goto(back)) = toks.get(si + 4) {
+                            if *there == -back && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
+                            {
+                                out.push(Token::Sub(*there));
+
+                                si += 6;
                                 continue;
                             }
                         }
                     }
                 }
+
+            // Add
             } else if let Some(Token::Goto(there)) = next {
-                if matches!(toks.get(si + 2), Some(Token::Add(1))) {
+                let next = toks.get(si + 2);
+                if let Some(Token::Inc(mul)) = next {
                     if let Some(Token::Goto(back)) = toks.get(si + 3) {
-                        if there.abs() == back.abs()
-                            && matches!(toks.get(si + 4), Some(Token::Sub(1)))
+                        if *there == -back
+                            && matches!(toks.get(si + 4), Some(Token::Dec(1)))
                             && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
                         {
-                            out.push(Token::Move(*there));
+                            out.push(Token::Add(*there, *mul));
 
                             si += 6;
-                            nsi += 1;
                             continue;
                         }
                     }
+                } else if matches!(next, Some(Token::Dec(1))) {
+                    if let Some(Token::Goto(back)) = toks.get(si + 3) {
+                        if *there == -back
+                            && matches!(toks.get(si + 4), Some(Token::Dec(1)))
+                            && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
+                        {
+                            out.push(Token::Sub(*there));
+
+                            si += 6;
+                            continue;
+                        }
+                    }
+                } else if matches!(next, Some(Token::RBrack(_))) {
+                    out.push(Token::Scan(*there));
+
+                    si += 3;
+                    continue;
                 }
             }
         }
 
         if matches!(tok, Token::LBrack(_)) {
-            lbracks.push(nsi);
+            lbracks.push(out.len());
         } else if matches!(tok, Token::RBrack(_)) {
             let lb = lbracks
                 .pop()
                 .unwrap_or_else(|| err("invalid input", "unmatched closing bracket"));
-            out[lb] = Token::LBrack(nsi);
+            out[lb] = Token::LBrack(out.len());
             tok = Token::RBrack(lb);
         } else if matches!(tok, Token::Goto(0)) {
             si += 1;
@@ -186,7 +225,6 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
 
         out.push(tok);
         si += 1;
-        nsi += 1;
     }
 
     if !lbracks.is_empty() {
@@ -199,8 +237,8 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Add(i) => write!(f, "{}", "+".repeat(*i as usize)),
-            Token::Sub(i) => write!(f, "{}", "-".repeat(*i as usize)),
+            Token::Inc(i) => write!(f, "{}", "+".repeat(*i as usize)),
+            Token::Dec(i) => write!(f, "{}", "-".repeat(*i as usize)),
             Token::Goto(i) => write!(f, "{}", left_right(*i)),
             Token::Set(i) => write!(f, "[-]{}", "+".repeat(*i as usize)),
             Token::LBrack(_) => write!(f, "["),
@@ -209,7 +247,15 @@ impl Display for Token {
 
             Token::In => write!(f, ","),
             Token::Zero => write!(f, "[-]"),
-            Token::Move(i) => write!(f, "[{}-{}+]", left_right(*i), left_right(-i)),
+            Token::Add(i, mul) => write!(
+                f,
+                "[{}-{}{}]",
+                left_right(*i),
+                left_right(-i),
+                "+".repeat(*mul as usize)
+            ),
+            Token::Sub(i) => write!(f, "[{}-{}-]", left_right(*i), left_right(-i)),
+            Token::Scan(i) => write!(f, "[{}]", left_right(*i)),
 
             #[cfg(any(debug_assertions, feature = "debug"))]
             Token::Dump => write!(f, ";"),
