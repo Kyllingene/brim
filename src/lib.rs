@@ -16,7 +16,7 @@ pub use token::parse;
 /// Since [`Token`] is `Copy`, this takes a slice instead of a `Vec`. It's
 /// other arguments, `stdin` and `stdout`, are also generic enough to provide
 /// for many use cases.
-pub fn interpret(code: &[Token], mut stdin: impl Iterator<Item = u8>, stdout: impl Write) {
+pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write) {
     let mut stdout = BufWriter::new(stdout);
 
     let mut tape = [0u8; 30000];

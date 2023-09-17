@@ -1,6 +1,6 @@
 [package]
 name = "brim"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 
 description = "An optimizing brain* interpreter."
@@ -12,7 +12,7 @@ keywords = ["cli", "command-line", "interpreter"]
 categories = ["command-line-interface"]
 
 [dependencies]
-sarge = "3.0.1"
+sarge = "4.0.2"
 
 [features]
 default = []

@@ -1,8 +1,8 @@
 use std::{
     cmp::Ordering,
     fmt::Display,
-    io::{stdin, Read},
-    process::exit,
+    io::{stdin, Read, Stdout, Write},
+    process::exit, fs::File,
 };
 
 #[cfg(debug_assertions)]
@@ -114,5 +114,27 @@ impl Iterator for ReadIter {
 impl Drop for ReadIter {
     fn drop(&mut self) {
         *STDIN_ITER_EXISTS.lock().unwrap() = false;
+    }
+}
+
+/// A wrapper around a Write-able object.
+pub enum WriteWrapper {
+    Stdout(Stdout),
+    File(File),
+}
+
+impl Write for WriteWrapper {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self {
+            WriteWrapper::Stdout(s) => s.write(buf),
+            WriteWrapper::File(f) => f.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        match self {
+            WriteWrapper::Stdout(s) => s.flush(),
+            WriteWrapper::File(f) => f.flush(),
+        }
     }
 }
