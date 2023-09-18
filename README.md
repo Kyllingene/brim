@@ -44,6 +44,8 @@ a single "instruction". Currently, it recognizes:
     - Also recognizes multiplication (`[->+++<]`)
 - Subtracting one cell from another (`[->-<]`)
 - Scanning for a zero cell (`[>>>]`)
+- Duplicating a cell (`[->+>+<<]`)
+    - Also recognizes multiplication (as with moving)
 
 The token-based structure makes these trivial to recognize, since repeating
 instructions have already been collapsed into one.
@@ -64,8 +66,8 @@ functions, as well as the `Token` enum.
 Brim isn't finished yet! My hopes for the future include:
 
 - More macro-optimizations
-- Heavy micro-optimization of brim itself
-- More variations (non-wrapping, signed, varying tape size)
+- Tape customizations via features
+- Cell behavior variants via features
 
 ## Contributions
 

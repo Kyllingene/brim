@@ -36,6 +36,8 @@ pub enum Token {
     Add(isize, u8),
     /// Macro-optimization. Equivalent to `[->-<]`.
     Sub(isize),
+    /// Macro-optimization. Equivalent to `[->+>+<<]`.
+    Dup(isize, u8, isize, u8),
     /// Macro-optimization. Equivalent to `[>>>]`.
     Scan(isize),
 
@@ -127,12 +129,17 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
         if matches!(tok, Token::LBrack(_)) {
             let next = toks.get(si + 1);
 
-            // Zero / Set / Add / Sub
+            // [
+            // Zero / Set / Add / Sub / Dup
             if matches!(next, Some(Token::Dec(1))) {
                 let next = toks.get(si + 2);
+
+                // [-
                 // Zero / Set
                 if matches!(next, Some(Token::RBrack(_))) {
+                    // [-]
                     if let Some(Token::Inc(i)) = toks.get(si + 3) {
+                        // [-]+++
                         out.push(Token::Set(*i));
 
                         si += 4;
@@ -144,19 +151,45 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
 
                     continue;
 
-                // Add / Sub
+                // [-
+                // Add / Sub / Dup
                 } else if let Some(Token::Goto(there)) = next {
                     let next = toks.get(si + 3);
 
-                    // Add
+                    // [->
+                    // Add / Dup
                     if let Some(Token::Inc(mul)) = next {
                         if let Some(Token::Goto(back)) = toks.get(si + 4) {
-                            if *there == -back && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
-                            {
-                                out.push(Token::Add(*there, *mul));
+                            let next = toks.get(si + 5);
 
-                                si += 6;
-                                continue;
+                            // [->+ ><
+                            // Add
+                            if *there == -back {
+                                // [->+<
+                                if matches!(next, Some(Token::RBrack(_))) {
+                                    // [->+<]
+                                    out.push(Token::Add(*there, *mul));
+
+                                    si += 6;
+                                    continue;
+                                }
+
+                            // [->+ ><
+                            // Dup
+                            } else if let Some(Token::Inc(mul2)) = next {
+                                // [->+ >< +
+                                if let Some(Token::Goto(bi)) = toks.get(si + 6) {
+                                    // [->+ >< + ><
+                                    if bi + there + back == 0
+                                        // [->+>+<<]
+                                        && matches!(toks.get(si + 7), Some(Token::RBrack(_)))
+                                    {
+                                        out.push(Token::Dup(*there, *mul, *back, *mul2));
+
+                                        si += 8;
+                                        continue;
+                                    }
+                                }
                             }
                         }
 
@@ -174,21 +207,51 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
                     }
                 }
 
-            // Add
+            // [
+            // Add / Sub / Dup / Scan
             } else if let Some(Token::Goto(there)) = next {
                 let next = toks.get(si + 2);
+
+                // [>
+                // Add / Dup
                 if let Some(Token::Inc(mul)) = next {
                     if let Some(Token::Goto(back)) = toks.get(si + 3) {
+                        let next = toks.get(si + 4);
+
+                        // [>+ ><
+                        // Add
                         if *there == -back
-                            && matches!(toks.get(si + 4), Some(Token::Dec(1)))
+                            && matches!(next, Some(Token::Dec(1)))
                             && matches!(toks.get(si + 5), Some(Token::RBrack(_)))
                         {
+                            // [>+<-]
                             out.push(Token::Add(*there, *mul));
 
                             si += 6;
                             continue;
+
+                        // [>+ ><
+                        // Dup
+                        } else if let Some(Token::Inc(mul2)) = next {
+                            // [>+ >< +
+                            if let Some(Token::Goto(bi)) = toks.get(si + 5) {
+                                if *bi == -(there + back)
+                                    // [>+>+<<
+                                    && matches!(toks.get(si + 6), Some(Token::Dec(1)))
+                                    // [>+>+<<-
+                                    && matches!(toks.get(si + 7), Some(Token::RBrack(_)))
+                                // [>+>+<<-]
+                                {
+                                    out.push(Token::Dup(*there, *mul, *back, *mul2));
+
+                                    si += 8;
+                                    continue;
+                                }
+                            }
                         }
                     }
+
+                // Sub
                 } else if matches!(next, Some(Token::Dec(1))) {
                     if let Some(Token::Goto(back)) = toks.get(si + 3) {
                         if *there == -back
@@ -201,6 +264,8 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
                             continue;
                         }
                     }
+
+                // Scan
                 } else if matches!(next, Some(Token::RBrack(_))) {
                     out.push(Token::Scan(*there));
 
@@ -210,17 +275,22 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
             }
         }
 
-        if matches!(tok, Token::LBrack(_)) {
-            lbracks.push(out.len());
-        } else if matches!(tok, Token::RBrack(_)) {
-            let lb = lbracks
-                .pop()
-                .unwrap_or_else(|| err("invalid input", "unmatched closing bracket"));
-            out[lb] = Token::LBrack(out.len());
-            tok = Token::RBrack(lb);
-        } else if matches!(tok, Token::Goto(0)) {
-            si += 1;
-            continue;
+        match tok {
+            Token::LBrack(_) => lbracks.push(out.len()),
+            Token::RBrack(_) => {
+                let lb = lbracks
+                    .pop()
+                    .unwrap_or_else(|| err("invalid input", "unmatched closing bracket"));
+                out[lb] = Token::LBrack(out.len());
+                tok = Token::RBrack(lb);
+            }
+
+            Token::Goto(0) | Token::Inc(0) | Token::Dec(0) => {
+                si += 1;
+                continue;
+            }
+
+            _ => {}
         }
 
         out.push(tok);
@@ -255,6 +325,15 @@ impl Display for Token {
                 "+".repeat(*mul as usize)
             ),
             Token::Sub(i) => write!(f, "[{}-{}-]", left_right(*i), left_right(-i)),
+            Token::Dup(i1, mul1, i2, mul2) => write!(
+                f,
+                "[-{}{}{}{}{}]",
+                left_right(*i1),
+                "+".repeat(*mul1 as usize),
+                left_right(*i2),
+                "+".repeat(*mul2 as usize),
+                left_right(-(i1 + i2)),
+            ),
             Token::Scan(i) => write!(f, "[{}]", left_right(*i)),
 
             #[cfg(any(debug_assertions, feature = "debug"))]

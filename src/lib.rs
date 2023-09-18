@@ -73,6 +73,17 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
                 *cell = cell.wrapping_sub(v);
                 tape[sp] = 0;
             }
+            Token::Dup(i1, mul1, i2, mul2) => {
+                let v = tape[sp];
+
+                let cell = &mut tape[wrap_goto(sp, i1)];
+                *cell = cell.wrapping_add(v * mul1);
+
+                let cell = &mut tape[wrap_goto(sp, i1 + i2)];
+                *cell = cell.wrapping_add(v * mul2);
+
+                tape[sp] = 0;
+            }
             Token::Scan(i) => {
                 while tape[sp] != 0 {
                     sp = wrap_goto(sp, i);
