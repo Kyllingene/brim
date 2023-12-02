@@ -20,8 +20,7 @@ sarge! {
 }
 
 fn main() {
-    let (args, files) = Args::parse()
-        .unwrap_or_else(|e| err("failed to parse arguments", e));
+    let (args, files) = Args::parse().unwrap_or_else(|e| err("failed to parse arguments", e));
 
     if args.help || files.is_empty() {
         warn(include_str!("usage.txt"));
