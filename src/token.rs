@@ -1,14 +1,14 @@
 use std::fmt::Display;
 
-use crate::{err, helper::left_right};
+use crate::{err, helper::left_right, Cell};
 
 /// An optimized token; it may represent more than one brain* instruction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Token {
     /// Equivalent to `'+' * n`.
-    Inc(u8),
+    Inc(Cell),
     /// Equivalent to `'-' * n`.
-    Dec(u8),
+    Dec(Cell),
     /// Equivalent to `'>' * n` if `n > 0`, else `'<' * n`.
     Goto(isize),
     /// A left bracket. The value is the index of the corresponding right
@@ -31,13 +31,13 @@ pub enum Token {
     /// Macro-optimization. Equivalent to `[-]`.
     Zero,
     /// Macro-optimization. Equivalent to `[-]+`.
-    Set(u8),
+    Set(Cell),
     /// Macro-optimization. Equivalent to `[->+<]`.
-    Add(isize, u8),
+    Add(isize, Cell),
     /// Macro-optimization. Equivalent to `[->-<]`.
     Sub(isize),
     /// Macro-optimization. Equivalent to `[->+>+<<]`.
-    Dup(isize, u8, isize, u8),
+    Dup(isize, Cell, isize, Cell),
     /// Macro-optimization. Equivalent to `[>>>]`.
     Scan(isize),
 

@@ -11,8 +11,17 @@ pleasant and easy to use.
 
 ### Details
 
-Brim uses a wrapping 30000-cell tape, with a single wrapping unsigned byte in
-each cell.
+Brim supports two types of tape: 30000-long wrapping, or non-wrapping
+dynamic-width. The former is default; the latter is through feature
+`dynamic_array`.
+
+The cells themselves have three features you can customize: wrapping, width, and
+signedness. By default, cells are unsigned bytes that wrap. However, through
+combining the following features, you can achieve multiple different kinds of
+cell:
+    - `nowrap`: Disables wrapping on increment/decrement
+    - `wide_cell`: Changes cells to be 64-bit
+    - `signed_cell`: Changes cells to be signed
 
 ### Debug
 

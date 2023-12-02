@@ -1,15 +1,15 @@
-use std::{
-    cmp::Ordering,
-    fmt::Display,
-    io::{stdin, Read},
-    process::exit,
-};
+use std::cmp::Ordering;
+use std::fmt::Display;
+use std::io::{stdin, Read};
+use std::process::exit;
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "debug"))]
 use std::sync::Mutex;
 
+use crate::{Cell, CellMod};
+
 /// Prevents multiple ReadIter's over stdin from being made.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "debug"))]
 static STDIN_ITER_EXISTS: Mutex<bool> = Mutex::new(false);
 
 /// Prints to stderr (in the format "msg: e") in red, then exits.
@@ -23,9 +23,13 @@ pub fn warn(msg: impl Display) {
     eprintln!("{0}[38:5:3m{1}{0}[0m", 27 as char, msg);
 }
 
-/// Wraps an addition/subtraction around 30000 and 0.
+/// Wraps an addition/subtraction around array bounds.
+///
+/// With feature `dynamic_array`, just prevents underflow. Otherwise, wraps
+/// around 30000 and 0.
 #[inline]
 pub fn wrap_goto(x: usize, c: isize) -> usize {
+    #[cfg(not(feature = "dynamic_array"))]
     if c > 0 {
         (x + c as usize) % 30000
     } else if c.unsigned_abs() > x {
@@ -33,6 +37,21 @@ pub fn wrap_goto(x: usize, c: isize) -> usize {
     } else {
         x - c.unsigned_abs()
     }
+
+    #[cfg(feature = "dynamic_array")]
+    x.saturating_add_signed(c)
+}
+
+/// Wraps an addition/subtraction around 255 and 0.
+///
+/// With feature `nowrap`, instead prevents over/underflow without wrapping.
+#[inline]
+pub fn wrap_cell(x: Cell, c: CellMod) -> Cell {
+    #[cfg(not(feature = "nowrap"))]
+    return (x as CellMod).wrapping_add(c) as Cell;
+
+    #[cfg(feature = "nowrap")]
+    return (x as CellMod).saturating_add(c) as Cell;
 }
 
 /// Turns a relative index into left/right symbols.
@@ -110,7 +129,7 @@ impl Iterator for ReadIter {
     }
 }
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "debug"))]
 impl Drop for ReadIter {
     fn drop(&mut self) {
         *STDIN_ITER_EXISTS.lock().unwrap() = false;
