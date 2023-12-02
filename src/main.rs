@@ -40,7 +40,7 @@ fn main() {
     if let Some(o) = args.output {
         let mut file = File::create(o).unwrap_or_else(|e| err("failed to open output file", e));
 
-        for filename in files {
+        for filename in files.iter().skip(1) {
             let input = fs::read_to_string(filename).unwrap_or_else(|e| err("failed", e));
 
             let toks = parse(&input);
@@ -49,7 +49,7 @@ fn main() {
             interpret(&toks, &mut stdin, &mut file);
         }
     } else {
-        for filename in files {
+        for filename in files.iter().skip(1) {
             let input = fs::read_to_string(filename).unwrap_or_else(|e| err("failed", e));
 
             let toks = parse(&input);
