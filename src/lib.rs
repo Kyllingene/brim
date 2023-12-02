@@ -62,7 +62,7 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
             Token::In => tape[sp] = stdin.next().unwrap_or(0) as Cell,
             Token::Out => {
                 #[allow(clippy::unnecessary_cast)]
-                let bytes = (tape[sp] as u64).to_ne_bytes();
+                let bytes = tape[sp].to_ne_bytes();
                 stdout
                     .write_all(&bytes)
                     .unwrap_or_else(|e| err("failed to write to output", e));
