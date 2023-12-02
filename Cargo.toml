@@ -12,7 +12,7 @@ keywords = ["cli", "command-line", "interpreter"]
 categories = ["command-line-interface"]
 
 [dependencies]
-sarge = "4.0.2"
+sarge = "7.0"
 
 [features]
 default = []

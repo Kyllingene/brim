@@ -11,6 +11,6 @@ dependencies = [
 
 [[package]]
 name = "sarge"
-version = "4.0.2"
+version = "7.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ae9e9946837712d5cc388e0de14275fbd1070f13976971c7967737d179f6440"
+checksum = "2fbed0b142027fef12ae0d5ba12e1a830834f148006ec3bc7433cbfff421d6bf"

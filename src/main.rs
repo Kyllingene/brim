@@ -11,23 +11,25 @@ use brim::{
     token::optimize,
 };
 
-fn main() {
-    let parser = ArgumentParser::new();
-    let help = parser.add(tag::both('h', "help"));
-    let stdin_arg = parser.add::<String>(tag::both('i', "input"));
-    let stdout_arg = parser.add::<String>(tag::both('o', "output"));
+sarge! {
+    Args,
 
-    let files = parser
-        .parse()
+    'h' help: bool,
+    #ok 'i' input: String,
+    #ok 'o' output: String,
+}
+
+fn main() {
+    let (args, files) = Args::parse()
         .unwrap_or_else(|e| err("failed to parse arguments", e));
 
-    if help.get() == Ok(true) || files.is_empty() {
+    if args.help || files.is_empty() {
         warn(include_str!("usage.txt"));
 
         return;
     }
 
-    let mut stdin = if let Ok(i) = stdin_arg.get() {
+    let mut stdin = if let Some(i) = args.input {
         let file = File::open(i).unwrap_or_else(|e| err("failed to open input file", e));
 
         ReadIter::new(Box::new(file))
@@ -35,7 +37,7 @@ fn main() {
         ReadIter::stdin()
     };
 
-    if let Ok(o) = stdout_arg.get() {
+    if let Some(o) = args.output {
         let mut file = File::create(o).unwrap_or_else(|e| err("failed to open output file", e));
 
         for filename in files {
