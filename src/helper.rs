@@ -1,16 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::io::{stdin, Read};
 use std::process::exit;
 
-#[cfg(any(debug_assertions, feature = "debug"))]
-use std::sync::Mutex;
-
 use crate::{Cell, CellMod};
-
-/// Prevents multiple ReadIter's over stdin from being made.
-#[cfg(any(debug_assertions, feature = "debug"))]
-static STDIN_ITER_EXISTS: Mutex<bool> = Mutex::new(false);
 
 /// Prints to stderr (in the format "msg: e") in red, then exits.
 pub fn err(msg: impl Display, e: impl Display) -> ! {
@@ -61,77 +53,5 @@ pub fn left_right(i: isize) -> String {
         Ordering::Greater => ">".repeat(i as usize),
         Ordering::Less => "<".repeat(-i as usize),
         Ordering::Equal => String::new(),
-    }
-}
-
-/// An iterator over bytes from a [`Read`]able source.
-/// Provides a `stdin` method for creating a `ReadIter` over [`stdin`].
-///
-/// Uses a 32-byte buffer internally.
-pub struct ReadIter {
-    read: Box<dyn Read>,
-    buf: [u8; 32],
-    len: usize,
-}
-
-impl ReadIter {
-    /// Initializes a new ReadIter.
-    pub fn new(read: Box<dyn Read>) -> Self {
-        Self {
-            read,
-            buf: [0; 32],
-            len: 0,
-        }
-    }
-
-    /// Initializes a new `ReadIter` over [`stdin`].
-    ///
-    /// # Panics
-    /// Panics if a `ReadIter` already exists, and debug assertions are enabled.
-    /// If not, the two iterators will fight for input, causing race conditions.
-    pub fn stdin() -> Self {
-        #[cfg(debug_assertions)]
-        if *STDIN_ITER_EXISTS.lock().unwrap() {
-            panic!("only one StdinIter can be initialized");
-        } else {
-            *STDIN_ITER_EXISTS.lock().unwrap() = true;
-        }
-
-        Self::new(Box::new(stdin()))
-    }
-
-    /// Pops a value from the buffer, unless it is empty.
-    /// Doesn't read anything if the buffer is empty.
-    fn pop(&mut self) -> Option<u8> {
-        if self.len == 0 {
-            None
-        } else {
-            self.len -= 1;
-            Some(self.buf[self.len])
-        }
-    }
-}
-
-impl Iterator for ReadIter {
-    type Item = u8;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.len != 0 {
-            self.pop()
-        } else {
-            let read = self
-                .read
-                .read(&mut self.buf)
-                .unwrap_or_else(|e| err("failed to read from stdin", e));
-            self.len = read;
-            self.pop()
-        }
-    }
-}
-
-#[cfg(any(debug_assertions, feature = "debug"))]
-impl Drop for ReadIter {
-    fn drop(&mut self) {
-        *STDIN_ITER_EXISTS.lock().unwrap() = false;
     }
 }

@@ -1,12 +1,12 @@
 use std::{
     fs::{self, File},
-    io::stdout,
+    io::{stdout, stdin, BufReader, Read},
 };
 
 use sarge::prelude::*;
 
 use brim::{
-    helper::{err, warn, ReadIter},
+    helper::{err, warn},
     interpret, parse,
     token::optimize,
 };
@@ -31,10 +31,10 @@ fn main() {
     let mut stdin = if let Some(i) = args.input {
         let file = File::open(i).unwrap_or_else(|e| err("failed to open input file", e));
 
-        ReadIter::new(Box::new(file))
+        Box::new(BufReader::new(file)) as Box<dyn Read>
     } else {
-        ReadIter::stdin()
-    };
+        Box::new(BufReader::new(stdin())) as Box<dyn Read>
+    }.bytes().map(|data| data.unwrap_or_else(|e| err("failed to read input", e)));
 
     if let Some(o) = args.output {
         let mut file = File::create(o).unwrap_or_else(|e| err("failed to open output file", e));

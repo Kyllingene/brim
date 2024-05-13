@@ -4,13 +4,13 @@ version = 3
 
 [[package]]
 name = "brim"
-version = "4.0.1"
+version = "4.1.0"
 dependencies = [
  "sarge",
 ]
 
 [[package]]
 name = "sarge"
-version = "7.0.1"
+version = "7.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fbed0b142027fef12ae0d5ba12e1a830834f148006ec3bc7433cbfff421d6bf"
+checksum = "418dc5382129de2daa733d2ba8dd0f2c84c584127935e8dbe2d9a5e65dfe8048"
