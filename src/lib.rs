@@ -1,7 +1,7 @@
 pub mod helper;
 pub mod token;
 
-use std::io::{BufWriter, Write};
+use std::io::Write;
 
 use helper::{err, wrap_cell, wrap_goto};
 use token::Token;
@@ -29,16 +29,27 @@ type Cell = i64;
 type CellMod = i64;
 
 /// The core of brim: the interpreter.
+///
 /// `stdin` must be an iterator over `u8`, but you can use
 /// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
 /// any [`Read`](std::io::Read)able type.
-///
-/// Since [`Token`] is `Copy`, this takes a slice instead of a `Vec`. `stdout`
-/// just has to be [`Write`](std::io::Write)able. However, it's wrapped
-/// internally by a [`BufWriter`](std::io::BufWriter), so **don't bother
-/// buffering it.**
+#[cfg(not(feature = "debug"))]
 pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write) {
-    let mut stdout = BufWriter::new(stdout);
+    common_interpret(code, stdin, stdout, 0)
+}
+
+/// The core of brim: the interpreter.
+///
+/// `stdin` must be an iterator over `u8`, but you can use
+/// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
+/// any [`Read`](std::io::Read)able type.
+#[cfg(feature = "debug")]
+pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write, debug_width: usize) {
+    common_interpret(code, stdin, stdout, debug_width)
+}
+
+fn common_interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write, debug_width: usize) {
+    // let mut stdout = BufWriter::new(stdout);
 
     #[cfg(not(feature = "dynamic_array"))]
     let mut tape = [0 as Cell; 30000];
@@ -139,7 +150,7 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
                 eprint!("\nsp: 0x{sp:04x}   ctx: {left} {cur} {right}");
 
                 for (tsp, item) in tape.iter().enumerate().take((highest + 1).max(8)) {
-                    if tsp % 8 == 0 {
+                    if tsp % debug_width == 0 {
                         eprintln!();
                     } else {
                         eprint!(" | ");

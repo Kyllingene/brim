@@ -11,6 +11,18 @@ use brim::{
     token::optimize,
 };
 
+#[cfg(feature = "debug")]
+sarge! {
+    Args,
+
+    'h' help: bool,
+    #ok 'i' input: String,
+    #ok 'o' output: String,
+
+    #ok 'w' debug_width: usize,
+}
+
+#[cfg(not(feature = "debug"))]
 sarge! {
     Args,
 
@@ -45,7 +57,11 @@ fn main() {
             let toks = parse(&input);
             let toks = optimize(&toks);
 
+            #[cfg(not(feature = "debug"))]
             interpret(&toks, &mut stdin, &mut file);
+
+            #[cfg(feature = "debug")]
+            interpret(&toks, &mut stdin, &mut file, args.debug_width.unwrap_or(8));
         }
     } else {
         for filename in files.iter().skip(1) {
@@ -54,7 +70,11 @@ fn main() {
             let toks = parse(&input);
             let toks = optimize(&toks);
 
+            #[cfg(not(feature = "debug"))]
             interpret(&toks, &mut stdin, &mut stdout());
+
+            #[cfg(feature = "debug")]
+            interpret(&toks, &mut stdin, &mut stdout(), args.debug_width.unwrap_or(8));
         }
     }
 }
