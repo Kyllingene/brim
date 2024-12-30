@@ -129,6 +129,12 @@ fn common_interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout
                 }
             }
 
+            Token::End => {
+                if tape[sp] != 0 {
+                    loop { std::thread::sleep(std::time::Duration::new(1000000, 0)); }
+                }
+            }
+
             #[cfg(any(debug_assertions, feature = "debug"))]
             Token::Dump => {
                 highest = highest.max(sp);

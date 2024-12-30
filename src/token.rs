@@ -41,6 +41,9 @@ pub enum Token {
     /// Macro-optimization. Equivalent to `[>>>]`.
     Scan(isize),
 
+    /// Macro-optimization. Equivalent to `[]`.
+    End,
+
     /// Equivalent to `';'`. Only available if in debug mode, or if feature
     /// flag `debug` is enabled.
     #[cfg(any(debug_assertions, feature = "debug"))]
@@ -272,6 +275,13 @@ pub fn optimize(toks: &[Token]) -> Vec<Token> {
                     si += 3;
                     continue;
                 }
+
+            // End
+            } else if let Some(Token::RBrack(_)) = next {
+                out.push(Token::End);
+
+                si += 2;
+                continue;
             }
         }
 
@@ -335,6 +345,8 @@ impl Display for Token {
                 left_right(-(i1 + i2)),
             ),
             Token::Scan(i) => write!(f, "[{}]", left_right(*i)),
+
+            Token::End => write!(f, "[]"),
 
             #[cfg(any(debug_assertions, feature = "debug"))]
             Token::Dump => write!(f, ";"),
