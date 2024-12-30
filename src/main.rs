@@ -19,7 +19,7 @@ sarge! {
     #ok 'i' input: String,
     #ok 'o' output: String,
 
-    #ok 'w' debug_width: usize,
+    #ok 'w' @BRIM_DEBUG_WIDTH debug_width: usize,
 }
 
 #[cfg(not(feature = "debug"))]
