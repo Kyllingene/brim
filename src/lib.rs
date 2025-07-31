@@ -30,9 +30,7 @@ type CellMod = i64;
 
 /// The core of brim: the interpreter.
 ///
-/// `stdin` must be an iterator over `u8`, but you can use
-/// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
-/// any [`Read`](std::io::Read)able type.
+/// Note that each bracket must have already been matched to its pair, i.e. through `optimize`.
 #[cfg(not(feature = "debug"))]
 pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write) {
     common_interpret(code, stdin, stdout, 0)
@@ -40,9 +38,7 @@ pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &
 
 /// The core of brim: the interpreter.
 ///
-/// `stdin` must be an iterator over `u8`, but you can use
-/// [`ReadIter`](helper::ReadIter) to easily create a buffered iterator over
-/// any [`Read`](std::io::Read)able type.
+/// Note that each bracket must have already been matched to its pair, i.e. through `optimize`.
 #[cfg(feature = "debug")]
 pub fn interpret(code: &[Token], stdin: &mut impl Iterator<Item = u8>, stdout: &mut impl Write, debug_width: usize) {
     common_interpret(code, stdin, stdout, debug_width)
